@@ -68,7 +68,7 @@ def start_job(url,options):
         # Bound in-memory history.
         for key in list(JOBS)[:-20]:JOBS.pop(key,None)
         job_id=secrets.token_hex(12)
-        JOBS[job_id]={'id':job_id,'url':url,'state':'queued','phase':'connecting','percent':0,'work':None,'message':'Connecting to the website','events':[],'cancel':False,'created':now(),'options':asdict(options)}
+        JOBS[job_id]={'id':job_id,'url':url,'state':'queued','phase':'connecting','message':'Connecting to the website','events':[],'cancel':False,'created':now(),'options':asdict(options)}
     def work():
         job=JOBS[job_id]
         job['state']='running'
@@ -78,24 +78,11 @@ def start_job(url,options):
                 job.update(message=message,phase=phase_for(message))
                 job['events'].append({'message':message,'phase':job['phase'],'time':now()})
                 job['events']=job['events'][-60:]
-        weights=[('pages',35),('destinations',40),('content',13),*([('browser',10)] if options.browser else []),('preparing',2)]
-        total_weight=sum(w for _,w in weights)
-        def work_progress(phase,completed,total):
-            if job['cancel']:raise CancelScan()
-            offset=0
-            for key,weight in weights:
-                if key==phase:
-                    percent=min(99,100*(offset+weight*min(1,completed/max(1,total)))/total_weight)
-                    with LOCK:
-                        job.update(percent=max(job['percent'],round(percent,2)),work={'phase':phase,'completed':completed,'total':total})
-                    return
-                offset+=weight
-        progress.work=work_progress
         try:
             scan=run_scan(url,options,progress=progress,artifact_dir=STORE.artifacts)
             progress('Preparing report and saving findings')
             data=STORE.save_scan(scan)
-            job.update(state='completed',phase='complete',percent=100,scan_id=data['id'],message='Analysis saved')
+            job.update(state='completed',phase='complete',scan_id=data['id'],message='Analysis saved')
         except CancelScan:
             job.update(state='cancelled',message='Scan cancelled. No partial report was saved.')
         except Exception as exc:
