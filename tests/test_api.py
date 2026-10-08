@@ -63,6 +63,8 @@ def test_scan_job_and_real_summary(api,monkeypatch):
         if job['state'] in ('completed','failed'):break
         time.sleep(.01)
     assert job['state']=='completed'
+    assert job['percent']==100
+    assert job['work']['phase']=='preparing'
     _,data,_=api('/api/scan/'+job['scan_id'])
     assert data['summary']['score'] is None
     assert data['summary']['counts']['Needs fixing']>0
@@ -92,3 +94,18 @@ def test_compare_and_real_only_scheduling(api):
     after['notes']=[];server.STORE.save_scan(after)
     assert api('/api/schedule',{'scan_id':after['id'],'hours':24})[0]==200
     assert len(server.STORE.schedules())==1
+
+
+def test_scanner_progress_reports_work_not_elapsed_time():
+    snapshots=[]
+    def progress(message):
+        pass
+    progress.work=lambda phase,completed,total:snapshots.append((phase,completed,total))
+    run_scan('https://sample-studio.test/',progress=progress,client=DemoClient())
+    assert all(0 <= completed <= total and total >= 1 for _,completed,total in snapshots)
+    assert ('pages',1,1) in snapshots
+    destinations=[x for x in snapshots if x[0]=='destinations']
+    assert len(destinations)>2 and destinations[-1]==('destinations',1,1)
+    assert ('content',1,1) in snapshots
+    assert not any(phase=='browser' for phase,_,_ in snapshots)
+    assert snapshots[-1]==('preparing',0,1)

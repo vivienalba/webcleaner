@@ -17,3 +17,5 @@ Live public-site network audits and Chromium-assisted inspection of third-party 
 Long-running deployed schedules and public multi-user hosting were not tested. This remains a private single-workspace application. There is no validated numerical scoring model; the interface displays observed findings and coverage rather than inventing scores.
 
 Connection diagnostic update: robots.txt transport/TLS failures retain their underlying reason; explicit disallow rules stay distinct. Missing robots.txt (404) remains allowed. TLS supplements system trust with certifi and retains certificate/hostname verification. Six regression cases cover these behaviors.
+
+Motion update: completed-work telemetry drives one shared bar/cube progress value; 100% is reported only after saving. Analysis tab transitions preserve the summary DOM. Desktop totals are centered. Verified with real-scanner fixtures, synchronized bar/cube checks, no continuous scan loops, repeated navigation, mobile layout, and reduced motion.

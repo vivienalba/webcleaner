@@ -18,3 +18,26 @@ select{appearance:none;-webkit-appearance:none}input[type=number]{appearance:tex
 
 /* Suppress native disclosure and select arrows on Safari and other browsers. */
 summary::marker{content:""}select{background-image:none}summary::-webkit-details-marker{display:none!important}
+
+/* Keep sections separated with spacing and surface color, without divider lines. */
+.header,.header nav,.graphic-caption,.inline-error,.inspection-list,.inspection-list div,.history-strip,.metric,.coverage,.report-tabs,.report-tabs button,.category-strip,.category-cell,.filter-bar,.finding-list,.finding-row,.finding-detail,.detail-top,.detail-section,.empty,.table-wrap,th,td,.note-box,.drawer,.drawer-head,.form-section,.stage-row,.preview-image,.metadata,.manual-row,.report-sheet,.report-sheet-head,.report-sheet .metric,.export-controls,.report-preview-row,.help-section,.help-section details,.history-row,.schedule-row,.compare-column,.compare-column li,.screen-pair img,.report-loading{border:0}
+.finding-row.selected{box-shadow:none}
+.report-tabs button.active{background:var(--tint);color:var(--indigo)}
+
+.metric{padding:0;min-height:98px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.metric .label{max-width:100%;overflow-wrap:normal}.scan-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.scan-cube{opacity:.2;transform-box:fill-box;transform-origin:center;color:var(--accent)}.scan-cube[data-status=active]{color:var(--white)}.scan-signal{transform:scaleX(0)}
+
+/* Header separation and breathing room inside text controls. */
+.header{border-bottom:1px solid rgba(0,0,0,.12)}
+.report-tabs{gap:8px}.report-tabs button{padding-inline:20px}
+.button{padding-inline:24px}.button.small{padding-inline:18px}.text-button{padding-inline:12px}
+.inspection-list div{justify-content:center;text-align:center}
+@media(max-width:760px){.report-tabs button{padding-inline:16px}.button{padding-inline:20px}.button.small{padding-inline:16px}}
+
+/* Thin geometric mobile menu; generous invisible tap area. */
+.header .mobile-nav{width:44px;height:44px;border:0;border-radius:0;background:transparent;padding:10px;gap:5px;align-content:center;color:var(--indigo);appearance:none;-webkit-appearance:none}
+.header .mobile-nav:hover{background:transparent}
+.header .mobile-nav span{display:block;width:24px;height:1px;background:currentColor;transform-origin:center;transition:transform 180ms ease-out,opacity 120ms ease-out}
+.header .mobile-nav[aria-expanded=true] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.header .mobile-nav[aria-expanded=true] span:nth-child(2){opacity:0}
+.header .mobile-nav[aria-expanded=true] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+@media(prefers-reduced-motion:reduce){.header .mobile-nav span{transition:none}}

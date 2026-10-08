@@ -62,7 +62,7 @@ def inspect_browser(scan,options,client,artifact_dir,progress=None):
         context.add_init_script("window.open=()=>null; navigator.sendBeacon=()=>false;")
         urls=[record["url"] for record in scan.pages[:options.browser_pages]]
         urls += [step["url"] for step in scan.journey if step["result"]=="Working" and step["url"] not in urls]
-        for url in urls[:10]:
+        for browser_index, url in enumerate(urls[:10]):
             if progress:
                 progress("Rendering desktop and mobile previews: "+url)
             record=next((r for r in scan.pages if r["url"]==url),None)
@@ -134,6 +134,7 @@ def inspect_browser(scan,options,client,artifact_dir,progress=None):
             for step in scan.journey:
                 if step["url"]==url:
                     step["screenshots"]=result["screenshots"]
+            getattr(progress, "work", lambda *args: None)("browser", browser_index+1, len(urls[:10]))
         context.close()
         browser.close()
     scan.notes.append("Browser results use a constrained, read-only session. Network timings are affected by interception and must not be treated as Core Web Vitals.")

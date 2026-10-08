@@ -178,12 +178,15 @@ def run_scan(url, options=None, progress=None, client=None, artifact_dir=None):
     options.max_seconds = max(10,min(options.max_seconds,600))
     scan = Scan(url,asdict(options))
     net = client or SafeClient(options.max_requests,options.max_seconds)
+    work = getattr(progress, "work", lambda *args: None)
+    work("pages", 0, options.max_pages)
     queue = deque([(url,0)])
     seen, resource_seen, by_url = set(),set(),{}
     while queue and len(scan.pages) < options.max_pages:
         current, depth = queue.popleft()
         if current in seen:
             continue
+        work("pages", len(scan.pages), options.max_pages)
         seen.add(current)
         if progress:
             progress(f"Reading page {len(scan.pages)+1}: {current}")
@@ -218,12 +221,16 @@ def run_scan(url, options=None, progress=None, client=None, artifact_dir=None):
             if key not in resource_seen:
                 resource_seen.add(key)
                 scan.resources.append({"page":r.url,**resource})
+    work("pages", 1, 1)
     if queue:
         scan.complete = False
         scan.notes.append("Page limit reached. Findings cover the scanned pages, not the entire website.")
     resource_records = scan.resources if any(x in options.categories for x in ("Links","Images","Technical","Performance","Metadata")) else []
     link_records = scan.links if "Links" in options.categories else []
+    destination_total = len(link_records)+len(resource_records)
+    work("destinations", 0, max(1,destination_total))
     for idx, item in enumerate(link_records+resource_records):
+        work("destinations", idx, max(1,destination_total))
         target = item.get("to",item.get("url"))
         page = item.get("from",item.get("page"))
         if progress and idx % 10 == 0:
@@ -251,6 +258,8 @@ def run_scan(url, options=None, progress=None, client=None, artifact_dir=None):
             target_soup = BeautifulSoup(r.text,"html.parser")
             if not target_soup.find(id=fragment) and not target_soup.find("a",attrs={"name":fragment}):
                 scan.add(page=page,category="Links",severity="Review",title="Anchor target not found in source HTML",evidence=f"#{fragment}",fix="Match the link fragment to a section ID. JavaScript may add the target later; verify in the browser.",target=target+"#"+fragment,code="anchor")
+    work("destinations", 1, 1)
+    work("content", 0, 1)
     if progress:
         progress('Comparing content and preparing technical findings')
     duplicates = defaultdict(list)
@@ -291,7 +300,9 @@ def run_scan(url, options=None, progress=None, client=None, artifact_dir=None):
             linked = any(normalize(a["href"],previous.url)==target for a in BeautifulSoup(previous.text,"html.parser").find_all("a",href=True) if urlsplit(urljoin(previous.url,a["href"])).scheme in ("http","https"))
         scan.journey.append({"url":target,"result":status_label(r),"linked_from_previous":linked,"detail":r.error or f"HTTP {r.status}; URL reachability test, not a completed transaction."})
         previous = r
+    work("content", 1, 1)
     if options.browser and scan.pages:
+        work("browser", 0, 1)
         try:
             from .browser import inspect_browser
             inspect_browser(scan,options,net,artifact_dir,progress)
@@ -300,6 +311,9 @@ def run_scan(url, options=None, progress=None, client=None, artifact_dir=None):
             scan.notes.append("Browser checks could not finish: "+str(exc)[:300])
     else:
         scan.notes.append("Browser checks were not enabled. Layout, computed contrast, screenshots and interactive behavior were not tested.")
+    if options.browser:
+        work("browser", 1, 1)
+    work("preparing", 0, 1)
     scan.finished = now()
     scan.notes.append(f"Read-only scan. {net.count} HTTP requests used. No login, purchase, form submission, email or phone call performed.")
     return scan
